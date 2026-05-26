@@ -1,0 +1,40 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="AnvayBDDSuite" verbose="2" parallel="tests" thread-count="5">
+
+    <listeners>
+        <listener class-name="com.cts.mfrp.Anvay.listeners.ExtentReportListener"/>
+        <listener class-name="com.cts.mfrp.Anvay.listeners.RetryListener"/>
+    </listeners>
+
+     <test name="Login Module">
+        <classes>
+            <class name="com.cts.mfrp.Anvay.runners.LoginRunner"/>
+        </classes>
+    </test>
+
+    <test name="Admin Module">
+        <classes>
+            <class name="com.cts.mfrp.Anvay.runners.AdminRunner"/>
+        </classes>
+    </test>
+
+    <test name="Chatbot Module">
+        <classes>
+            <class name="com.cts.mfrp.Anvay.runners.ChatbotRunner"/>
+        </classes>
+    </test>
+
+     <test name="Institute Module">
+        <classes>
+            <class name="com.cts.mfrp.Anvay.runners.InstitutionRunner"/>
+        </classes>
+    </test>
+
+   <test name="Student Module">
+        <classes>
+            <class name="com.cts.mfrp.Anvay.runners.StudentRunner"/>
+        </classes>
+    </test>
+
+</suite>
