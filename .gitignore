@@ -1,0 +1,38 @@
+# Maven build output
+target/
+
+# TestNG default output
+test-output/
+
+# Custom test outputs generated at runtime
+test-outputs/
+
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Java compiled files
+*.class
+*.log
+
+# WebDriverManager cache
+.wdm/
+
+# Credentials - never commit
+src/test/resources/config.properties
