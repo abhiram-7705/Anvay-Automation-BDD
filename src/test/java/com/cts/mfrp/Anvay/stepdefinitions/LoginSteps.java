@@ -11,6 +11,7 @@ import com.cts.mfrp.Anvay.hooks.DriverManager;
 import com.cts.mfrp.Anvay.pages.LandingPage;
 import com.cts.mfrp.Anvay.pages.LoginPage;
 import com.cts.mfrp.Anvay.utils.ConfigReader;
+import com.cts.mfrp.Anvay.utils.ExcelUtils;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -18,6 +19,13 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 public class LoginSteps {
+
+    private String currentEmail;
+    private String currentPassword;
+    private String currentRole;
+    private String currentExpectedEmailError;
+    private String currentExpectedPasswordError;
+    private String currentExpectedLoginError;
 
     private WebDriver driver() {
         return DriverManager.getDriver();
@@ -72,17 +80,26 @@ public class LoginSteps {
         assertTrue(loginPage().isSignUpLinkLoaded(), "Sign up link is not ready");
     }
 
-    @When("the user logs in with email {string} and password {string}")
-    public void theUserLogsInWithEmailAndPassword(String email, String password) {
-        loginPage().login(email.trim(), password);
-        loginPage().waitForPageTransition(ConfigReader.get("base.url") + "login");
+    @When("the user logs in using valid login Excel row {int}")
+    public void theUserLogsInUsingValidLoginExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("LoginData.xlsx", "ValidLogin");
+            Object[] row = data[rowNum - 1];
+            currentEmail    = (String) row[2];
+            currentPassword = (String) row[3];
+            currentRole     = (String) row[1];
+            loginPage().login(currentEmail, currentPassword);
+            loginPage().waitForPageTransition(ConfigReader.get("base.url") + "login");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
+        }
     }
 
-    @Then("the browser should redirect to the {string} dashboard")
-    public void theBrowserShouldRedirectToTheDashboard(String role) {
+    @Then("the browser should redirect to the correct dashboard for row {int}")
+    public void theBrowserShouldRedirectToTheCorrectDashboardForRow(int rowNum) {
         String baseURL = ConfigReader.get("base.url");
         String expectedUrl;
-        switch (role.toLowerCase()) {
+        switch (currentRole.toLowerCase()) {
             case "super admin":
                 expectedUrl = baseURL + "dashboard/super-admin"; break;
             case "institution":
@@ -92,45 +109,52 @@ public class LoginSteps {
             default:
                 expectedUrl = baseURL + "dashboard/student"; break;
         }
-        assertEquals(driver().getCurrentUrl(), expectedUrl, "Wrong dashboard URL for role: " + role);
+        assertEquals(driver().getCurrentUrl(), expectedUrl,
+                "Row " + rowNum + ": Wrong dashboard URL for role: " + currentRole);
     }
 
-    @When("the user enters email {string} and password {string}")
-    public void theUserEntersEmailAndPassword(String email, String password) {
-        loginPage().enterEmail(email);
-        loginPage().enterPassword(password);
-    }
-
-    @Then("the email validation error should be {string}")
-    public void theEmailValidationErrorShouldBe(String expectedEmailError) {
-        if (!expectedEmailError.isEmpty()) {
-            SoftAssert soft = new SoftAssert();
-            soft.assertEquals(loginPage().emailErrorMessage(), expectedEmailError, "Email error mismatch");
-            soft.assertFalse(loginPage().isSubmitButtonEnabled(), "Submit button should be disabled");
-            soft.assertAll();
+    @When("the user enters invalid credentials from Excel row {int}")
+    public void theUserEntersInvalidCredentialsFromExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("LoginData.xlsx", "InvalidLogin");
+            Object[] row = data[rowNum - 1];
+            currentEmail                 = (String) row[1];
+            currentPassword              = (String) row[2];
+            currentExpectedEmailError    = (String) row[3];
+            currentExpectedPasswordError = (String) row[4];
+            currentExpectedLoginError    = (String) row[5];
+            loginPage().enterEmail(currentEmail);
+            loginPage().enterPassword(currentPassword);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
         }
     }
 
-    @And("the password validation error should be {string}")
-    public void thePasswordValidationErrorShouldBe(String expectedPasswordError) {
-        if (!expectedPasswordError.isEmpty()) {
-            SoftAssert soft = new SoftAssert();
-            soft.assertEquals(loginPage().passwordErrorMessage(), expectedPasswordError, "Password error mismatch");
-            soft.assertFalse(loginPage().isSubmitButtonEnabled(), "Submit button should be disabled");
-            soft.assertAll();
-        }
-    }
+    @Then("the validation errors for row {int} should match")
+    public void theValidationErrorsForRowShouldMatch(int rowNum) {
+        SoftAssert soft = new SoftAssert();
 
-    @And("the login error should be {string}")
-    public void theLoginErrorShouldBe(String expectedLoginError) {
-        if (!expectedLoginError.isEmpty()) {
-            loginPage().login(
-                    loginPage().emailErrorMessage().isEmpty() ? "wrong@example.com" : "",
-                    "wrongpwd");
-            SoftAssert soft = new SoftAssert();
-            soft.assertEquals(loginPage().loginErrorMessage(), expectedLoginError, "Login error mismatch");
-            soft.assertAll();
+        if (currentExpectedEmailError != null && !currentExpectedEmailError.isEmpty()) {
+            soft.assertEquals(loginPage().emailErrorMessage(), currentExpectedEmailError,
+                    "Row " + rowNum + ": Email error mismatch");
+            soft.assertFalse(loginPage().isSubmitButtonEnabled(),
+                    "Row " + rowNum + ": Submit button should be disabled");
         }
+
+        if (currentExpectedPasswordError != null && !currentExpectedPasswordError.isEmpty()) {
+            soft.assertEquals(loginPage().passwordErrorMessage(), currentExpectedPasswordError,
+                    "Row " + rowNum + ": Password error mismatch");
+            soft.assertFalse(loginPage().isSubmitButtonEnabled(),
+                    "Row " + rowNum + ": Submit button should be disabled");
+        }
+
+        if (currentExpectedLoginError != null && !currentExpectedLoginError.isEmpty()) {
+            loginPage().login(currentEmail, currentPassword);
+            soft.assertEquals(loginPage().loginErrorMessage(), currentExpectedLoginError,
+                    "Row " + rowNum + ": Login error mismatch");
+        }
+
+        soft.assertAll();
     }
 
     @When("the user clears the email field")

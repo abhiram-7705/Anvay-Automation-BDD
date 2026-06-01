@@ -24,5 +24,7 @@ public class AdminDashboardPage extends BasePage {
 		waits.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//table[@class='data-table']/tbody/tr[1]")));
 	}
 	
+	
+	
 
 }

@@ -4,24 +4,24 @@ Feature: Admin College Management
   Background:
     Given the admin is logged in
 
-  @sanity
-  Scenario Outline: Search for institution by name returns expected results - <testCase>
+  @sanity @regression
+  Scenario Outline: Search for institution by name returns expected results - row <rowNum>
     And the admin navigates to College Management
     And the search box is loaded
-    When the admin searches for "<searchTerm>"
-    Then the search result should be "<expectedResult>"
+    When the admin searches using Excel row <rowNum>
+    Then the search result from Excel row <rowNum> should match
 
     Examples:
-      | testCase | searchTerm          | expectedResult |
-      | valid1   | iit                 | found          |
-      | valid2   | anurag              | found          |
-      | extra1   | TRAILING_IIT        | found          |
-      | extra2   | LEADING_IIT         | found          |
-      | extra3   | BOTH_SPACES_IIT     | found          |
-      | invalid1 | kjnsdk              | not found      |
-      | invalid2 | jnkanf              | not found      |
+      | rowNum |
+      | 1      |
+      | 2      |
+      | 3      |
+      | 4      |
+      | 5      |
+      | 6      |
+      | 7      |
 
-  @sanity
+  @sanity @regression
   Scenario: Admin approves a pending institution
     And the admin navigates to College Management
     When the admin resets the search

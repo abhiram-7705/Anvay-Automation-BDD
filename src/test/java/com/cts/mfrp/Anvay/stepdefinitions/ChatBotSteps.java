@@ -8,6 +8,7 @@ import org.testng.asserts.SoftAssert;
 
 import com.cts.mfrp.Anvay.hooks.DriverManager;
 import com.cts.mfrp.Anvay.pages.ChatbotPage;
+import com.cts.mfrp.Anvay.utils.ExcelUtils;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
@@ -29,23 +30,32 @@ public class ChatBotSteps {
         assertTrue(chatbotPage().isPanelDisplayed(), "Chatbot panel should be visible");
     }
 
-    @And("the user clicks the quick-select button {string}")
-    public void theUserClicksTheQuickSelectButton(String buttonName) {
-        switch (buttonName) {
-            case "Register for Event":
-                chatbotPage().clickQuickSelectRegisterEvent(); break;
-            case "Apply for Leader":
-                chatbotPage().clickQuickSelectApplyLeader(); break;
-            case "Event Rules":
-                chatbotPage().clickQuickSelectEventRules(); break;
-            case "Join a Club":
-                chatbotPage().clickQuickSelectJoinClub(); break;
-            case "Points and Ranking":
-                chatbotPage().clickQuickSelectPointsRanking(); break;
-            case "Create an Event":
-                chatbotPage().clickQuickSelectCreateEvent(); break;
-            default:
-                throw new IllegalArgumentException("Unknown quick-select button: " + buttonName);
+    @And("the user clicks the quick-select button from Excel row {int}")
+    public void theUserClicksTheQuickSelectButtonFromExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("ChatbotData.xlsx", "QuickSelectResponses");
+            Object[] row = data[rowNum - 1];
+            String buttonName = (String) row[1];
+            switch (buttonName) {
+                case "Register for Event":
+                    chatbotPage().clickQuickSelectRegisterEvent(); break;
+                case "Apply for Leader":
+                    chatbotPage().clickQuickSelectApplyLeader(); break;
+                case "Event Rules":
+                    chatbotPage().clickQuickSelectEventRules(); break;
+                case "Join a Club":
+                    chatbotPage().clickQuickSelectJoinClub(); break;
+                case "Points and Ranking":
+                    chatbotPage().clickQuickSelectPointsRanking(); break;
+                case "Create an Event":
+                    chatbotPage().clickQuickSelectCreateEvent(); break;
+                default:
+                    throw new IllegalArgumentException("Unknown quick-select button: " + buttonName);
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
         }
     }
 
@@ -66,9 +76,28 @@ public class ChatBotSteps {
         }
     }
 
-    @And("the user types the message {string}")
-    public void theUserTypesTheMessage(String message) {
-        chatbotPage().typeMessage(message);
+    @And("the user types the free text message from Excel row {int}")
+    public void theUserTypesTheFreeTextMessageFromExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("ChatbotData.xlsx", "FreeTextEnterKey");
+            Object[] row = data[rowNum - 1];
+            String query = (String) row[1];
+            chatbotPage().typeMessage(query);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
+        }
+    }
+
+    @And("the user types the out of scope message from Excel row {int}")
+    public void theUserTypesTheOutOfScopeMessageFromExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("ChatbotData.xlsx", "OutOfScopeQueries");
+            Object[] row = data[rowNum - 1];
+            String query = (String) row[1];
+            chatbotPage().typeMessage(query);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
+        }
     }
 
     @And("the user sends the message with the Enter key")

@@ -9,6 +9,7 @@ import org.testng.asserts.SoftAssert;
 import com.cts.mfrp.Anvay.hooks.DriverManager;
 import com.cts.mfrp.Anvay.pages.AdminDashboardPage;
 import com.cts.mfrp.Anvay.pages.CollegeManagementPage;
+import com.cts.mfrp.Anvay.utils.ExcelUtils;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -17,17 +18,11 @@ import io.cucumber.java.en.When;
 
 public class AdminSteps {
 
+    private String currentSearchTerm;
+    private String currentExpectedResult;
+
     private WebDriver driver() {
         return DriverManager.getDriver();
-    }
-
-    private String resolveSearchTerm(String term) {
-        switch (term) {
-            case "TRAILING_IIT":    return "iit               ";
-            case "LEADING_IIT":     return "            iit";
-            case "BOTH_SPACES_IIT": return "       iit       ";
-            default:                return term;
-        }
     }
 
     @Given("the admin is logged in")
@@ -45,21 +40,29 @@ public class AdminSteps {
                 "College management search box is not loaded");
     }
 
-    @When("the admin searches for {string}")
-    public void theAdminSearchesFor(String searchTerm) {
-        new CollegeManagementPage(driver()).searchFor(resolveSearchTerm(searchTerm));
+    @When("the admin searches using Excel row {int}")
+    public void theAdminSearchesUsingExcelRow(int rowNum) {
+        try {
+            Object[][] data = ExcelUtils.getTestData("AdminData.xlsx", "InstitutionSearch");
+            Object[] row = data[rowNum - 1];
+            currentSearchTerm     = (String) row[1];
+            currentExpectedResult = (String) row[2];
+            new CollegeManagementPage(driver()).searchFor(currentSearchTerm);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read Excel row " + rowNum + ": " + e.getMessage(), e);
+        }
     }
 
-    @Then("the search result should be {string}")
-    public void theSearchResultShouldBe(String expectedResult) {
+    @Then("the search result from Excel row {int} should match")
+    public void theSearchResultFromExcelRowShouldMatch(int rowNum) {
         SoftAssert soft = new SoftAssert();
         CollegeManagementPage page = new CollegeManagementPage(driver());
-        if ("found".equalsIgnoreCase(expectedResult)) {
+        if ("found".equalsIgnoreCase(currentExpectedResult)) {
             soft.assertFalse(page.isNoResultsMsgDisplayed(),
-                    "Expected results but got no results message");
+                    "Row " + rowNum + ": Expected results for [" + currentSearchTerm + "] but got no results");
         } else {
             soft.assertTrue(page.isNoResultsMsgDisplayed(),
-                    "Expected no results message but results were found");
+                    "Row " + rowNum + ": Expected no results for [" + currentSearchTerm + "] but results were found");
         }
         soft.assertAll();
     }
